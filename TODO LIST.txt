@@ -1,0 +1,17 @@
+-zmiana zapisu wlasciwosci stickerow z elementdata na tabele		-DONE
+-dodac plynna edycje wybranego stickera		-DONE
+-dopracowac indywidualnosc rysowania targetow		-DONE
+-synchro tabel na server		-DONE
+-modele uv mapped!		-IK HOW TO
+-UI		-DONE
+-ludziom sie nadpisuja naklejki przy wejsciu 	-DONE
+-przy tworzeniu synchro na server duplikuje sie tyle ile jest graczy	-DONE
+-instrukcja obslugi na ekranie		-DONE
+-restrykcja panelu tylko dla kierowcy	-DONE
+-dodac zapis do xml		-DONE
+-tabela dostepnych pojazdow		-DONE
+-scalowanie w jednej plaszczyznie	-DONE
+-kolorowanie naklejek		-DONE
+-usuwanie dowolnej naklejki		-DONE
+-sprawdz mniejsza rozdzialke naklejek!
+-ograniczenie dla vipow
