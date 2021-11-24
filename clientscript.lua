@@ -317,6 +317,47 @@ end
 addEvent("onRemoveSticker", true)
 addEventHandler("onRemoveSticker", root, removeSticker)
 
+function insertSticker(player, id, mode)
+	if not id then
+		outputChatBox("Sticker ID not specified")
+		return
+	end
+	local vehicle = getPedOccupiedVehicle( player )
+	if vehicle then
+
+		local stickers = targets[ createdStickers[vehicle] ]
+		if not stickers then return end
+		if ( (tonumber(id) > #stickers) or (tonumber(id) < 1) ) then
+			-- outputChatBox("Chosen sticker ID doesn't exist", 255, 25, 25)
+			return
+		end
+		local sticker = stickers[id]
+		local sticker_new = {
+    	['x'] = tonumber(sticker.x) or 400,
+    	['y'] = tonumber(sticker.y) or 400,
+    	['width'] = 512,
+    	['height'] = 512,
+    	['scaleX'] = tonumber(sticker.scaleX) or 1,
+    	['scaleY'] = tonumber(sticker.scaleY) or 1,
+    	['model'] = sticker.model or "stickers/15.png",
+    	['rotation'] = tonumber(sticker.rotation) or 0,
+    	['r'] = tonumber(sticker.r) or 255,
+    	['g'] = tonumber(sticker.g) or 255,
+    	['b'] = tonumber(sticker.b) or 255
+		}
+		sticker_new.y = 767-sticker_new.y
+		if mode == "Text" then
+			sticker_new.scaleX = -sticker_new.scaleX
+		end
+		sticker_new.scaleY = -sticker_new.scaleY
+		-- outputChatBox(tostring(sticker_new.y))
+		table.insert(stickers, id+1, sticker_new)
+	end
+	renderStickers()
+end
+addEvent("onInsertSticker", true)
+addEventHandler("onInsertSticker", root, insertSticker)
+
 function editSticker( player, id, x, y, scaleX, scaleY, model, rotation, r, g, b )
 	if not id then
 		-- outputChatBox("Sticker ID not specified")
@@ -349,6 +390,7 @@ function editSticker( player, id, x, y, scaleX, scaleY, model, rotation, r, g, b
 		stickers = targets[ createdStickers[vehicle] ]
 		-- outputChatBox("Sticker id "..id.." has been edited", 255, 255, 25)
 		renderStickers()
+		-- outputChatBox(x.." "..y.." "..model)
 	end
 end
 addEvent("onEditSticker", true)

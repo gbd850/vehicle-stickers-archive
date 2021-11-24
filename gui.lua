@@ -166,6 +166,15 @@ function postDownloadGUI ()
 
         stickers_display_scroll = guiCreateScrollPane(0.05, 0.05, 0.89, 0.93, true, stickers_display_window)
 
+        stickers_mirror_window = guiCreateWindow(0.41, 0.22, 0.19, 0.10, "Mirroring Settings", true)
+        guiWindowSetSizable(stickers_mirror_window, false)
+
+        stickers_mirror_btn = guiCreateButton(0.57, 0.22, 0.40, 0.68, "Mirror", true, stickers_mirror_window)
+        guiSetProperty(stickers_mirror_btn, "NormalTextColour", "FFAAAAAA")
+        stickers_mirror_combo = guiCreateComboBox(0.03, 0.22, 0.52, 0.68, "Normal", true, stickers_mirror_window)
+        guiComboBoxAddItem(stickers_mirror_combo, "Normal")
+        guiComboBoxAddItem(stickers_mirror_combo, "Text")
+        guiWindowSetSizable(stickers_mirror_window, false)
 
         stickers_edit_window = guiCreateWindow(0.38, 0.13, 0.25, 0.09, "Sticker Edit Menu", true)
         guiWindowSetSizable(stickers_edit_window, false)
@@ -260,6 +269,8 @@ function postDownloadGUI ()
         guiSetVisible(stickers_save_load_window, false)
         guiSetVisible(stickers_info_window, false)
 
+        guiSetVisible(stickers_mirror_window, false)
+
         guiSetEnabled(stickers_edit_btn, false)
         guiSetEnabled(stickers_remove_btn, false)
 
@@ -285,6 +296,8 @@ function postDownloadGUI ()
 
         addEventHandler( "onClientGUIClick", stickers_info_btn, gui_InfoWindowEnter, false )
         addEventHandler( "onClientGUIClick", stickers_info_exit_btn, gui_InfoWindowExit, false )
+
+        addEventHandler( "onClientGUIClick", stickers_mirror_btn, gui_MirrorSticker, false )
 
 
         isGUIReadyToOpen = true
@@ -479,11 +492,15 @@ function presets_LoadPreset( )
     emergency_preset_window_exit( "true" )
 end
 
-function editing_button_toggle( )
-    if ( source == stickers_edit_apply_btn ) then
+function editing_button_toggle( apply )
+    if ( source == stickers_edit_apply_btn or apply == "apply" ) then
         -- change_editing( "apply" )
         change_editing( "apply", current_selected_sticker, "apply" )
-        outputChatBox("Sticker id "..current_selected_sticker.." has been edited", 255, 255, 25)
+        if apply == "apply" then
+        	outputChatBox("Sticker id "..current_selected_sticker.." has been mirrored", 255, 255, 25)
+        else
+        	outputChatBox("Sticker id "..current_selected_sticker.." has been edited", 255, 255, 25)
+        end
         guiSetEnabled( stickers_settings_window, true )
 
         guiSetEnabled(stickers_edit_btn, false)
@@ -493,6 +510,8 @@ function editing_button_toggle( )
 
         guiSetEnabled( stickers_display_window, true )
         guiSetVisible( stickers_edit_window, false )
+
+        guiSetVisible(stickers_mirror_window, false)
 
         guiSetEnabled(stickers_save_info_window, true)
 
@@ -640,8 +659,46 @@ end
 
 function gui_editSticker( )
     guiSetVisible( stickers_edit_window, true )
+    guiSetVisible(stickers_mirror_window, true)
     guiSetEnabled( stickers_settings_window, false )
     -- guiSetEnabled( stickers_save_info_window, false )
+end
+
+function gui_MirrorSticker()
+	local vehicle = getPedOccupiedVehicle( localPlayer )
+	local combo_select = guiComboBoxGetSelected(stickers_mirror_combo)
+	-- if combo_select == -1 then
+	-- 	combo_select = 1
+	-- end
+	local mode = guiComboBoxGetItemText(stickers_mirror_combo, combo_select)
+	if vehicle then
+        triggerServerEvent("gui_onInsertSticker", resourceRoot, localPlayer, current_selected_sticker, mode)
+
+        editing_button_toggle("apply")
+
+        for i=1, #temporary_gui_stickers_btn do
+            removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
+            destroyElement(temporary_gui_stickers_btn[i])
+            destroyElement(temporary_gui_stickers[i])
+        end
+
+        temporary_gui_stickers = {}
+        temporary_gui_stickers_btn = {}
+
+        local stickers = targets[ createdStickers[vehicle] ]
+        if not stickers then return end
+        setTimer( function()
+            for i=1, #stickers do
+                local sticker = stickers[i]
+                temporary_gui_stickers[i] = guiCreateStaticImage(0, 0.02+(0.27*(i-1)), 0.8, 0.265, sticker['model'], true, stickers_display_scroll)
+                temporary_gui_stickers_btn[i] = guiCreateButton( 0, 0.02+(0.27*(i-1)), 0.8, 0.265, "", true, stickers_display_scroll )
+                guiSetProperty( temporary_gui_stickers[i], "Disabled", "True" )
+                guiSetProperty( temporary_gui_stickers[i], "AlwaysOnTop", "True" )
+                addEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker, false )
+                -- outputChatBox(tostring(sticker))
+            end
+        end, 100, 1 )
+    end
 end
 
 function gui_editMode( )
@@ -661,12 +718,14 @@ function gui_editMode( )
         -- change_editing( "edit" )
         change_editing( "edit", current_selected_sticker, "color" )
         guiSetEnabled(stickers_edit_window, false)
+        guiSetEnabled(stickers_mirror_window, false)
     end
 end
 
 function gui_AcceptColor( )
     -- outputChatBox("chuj")
     guiSetEnabled(stickers_edit_window, true)
+    guiSetEnabled(stickers_mirror_window, true)
 end
 addEventHandler("onColorPickerOK_btn", root, gui_AcceptColor)
 
@@ -682,6 +741,8 @@ function gui_removeSticker( )
 
     guiSetEnabled( stickers_display_window, true )
     guiSetVisible( stickers_edit_window, false )
+
+    guiSetVisible(stickers_mirror_window, false)
 
     local vehicle = getPedOccupiedVehicle( player )
     if vehicle then

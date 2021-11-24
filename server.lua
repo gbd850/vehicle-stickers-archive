@@ -61,6 +61,40 @@ end
 addEvent("gui_onRemoveSticker", true)
 addEventHandler("gui_onRemoveSticker", root, removeSticker_s)
 
+function insertSticker_s(player, id, mode)
+	triggerClientEvent("onInsertSticker", player, player, id, mode)
+	local vehicle = getPedOccupiedVehicle( player )
+	if vehicle then
+		local stickers = createdStickers_s[vehicle]
+		if not stickers then return end
+		if ( (tonumber(id) > #stickers) or (tonumber(id) < 1) ) then
+			-- outputChatBox("Chosen sticker ID doesn't exist", 255, 25, 25)
+			return
+		end
+		local sticker = stickers[id]
+		local sticker_new = {
+    	['x'] = tonumber(sticker.x) or 400,
+    	['y'] = tonumber(sticker.y) or 400,
+    	['width'] = 512,
+    	['height'] = 512,
+    	['scaleX'] = tonumber(sticker.scaleX) or 1,
+    	['scaleY'] = tonumber(sticker.scaleY) or 1,
+    	['model'] = sticker.model or "stickers/15.png",
+    	['rotation'] = tonumber(sticker.rotation) or 0,
+    	['r'] = tonumber(sticker.r) or 255,
+    	['g'] = tonumber(sticker.g) or 255,
+    	['b'] = tonumber(sticker.b) or 255
+		}
+		sticker_new.y = 767-sticker_new.y
+		if mode == "Text" then
+			sticker_new.scaleX = -sticker_new.scaleX
+		end
+		sticker_new.scaleY = -sticker_new.scaleY
+		table.insert(stickers, id+1, sticker_new)
+	end
+end
+addEvent("gui_onInsertSticker", true)
+addEventHandler("gui_onInsertSticker", root, insertSticker_s)
 
 function editSticker_s( player, cName, id, x, y, scaleX, scaleY, model, rotation, r, g, b )
 	triggerClientEvent("onEditSticker", player, player, id, x, y, scaleX, scaleY, model, rotation, r, g, b)
