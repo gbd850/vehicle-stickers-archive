@@ -11,6 +11,7 @@ local blacklist = { }
 
 local shaders = { }
 
+local textures = { }
 	--	https://forum.mtasa.com/topic/114585-error-loading-image-dxdrawimage/ for answer on why this table and rhat loop in line 405 and this if in line 482
 
 -- local stickers = { }
@@ -76,13 +77,14 @@ local shaders = { }
     			local scaleX = sticker['scaleX']
     			local scaleY = sticker['scaleY']
     			local model = sticker['model']
+    			local texture = sticker['texture']
     			local rot = sticker['rotation']
     			local r = sticker['r']
     			local g = sticker['g']
     			local b = sticker['b']
     			if not blacklist[model] then
     			-- outputChatBox("Target: "..tostring(target).." x: "..tostring(x).." y: "..tostring(y).." scale: "..tostring(scale).." model: "..tostring(model).." rot: "..tostring(rot))
-    				if not dxDrawImage(x-((width/2)*(scaleX-1)), y-((height/2)*(scaleY-1)), width*scaleX, height*scaleY, model, rot, 0, 0, tocolor(r, g, b, 255)) then
+    				if not dxDrawImage(x-((width/2)*(scaleX-1)), y-((height/2)*(scaleY-1)), width*scaleX, height*scaleY, texture, rot, 0, 0, tocolor(r, g, b, 255)) then
     					blacklist[model] = true
     					reloadCheck = true
     					-- outputChatBox(model.."  "..tostring(blacklist[model]))
@@ -127,12 +129,17 @@ function addSticker(player, x, y, scaleX, scaleY, model, rotation, r, g, b)
     	['scaleX'] = tonumber(scaleX) or 1,
     	['scaleY'] = tonumber(scaleY) or 1,
     	['model'] = model or "stickers/15.png",
+    	['texture'] = nil,
     	['rotation'] = tonumber(rotation) or 0,
     	['r'] = tonumber(r) or 255,
     	['g'] = tonumber(g) or 255,
     	['b'] = tonumber(b) or 255
 		}
 
+		if not textures[model] then
+			textures[model] = dxCreateTexture(model)
+		end
+		sticker.texture = textures[model]
 
         if not createdStickers[vehicle] then
         	local myShader,tecName = dxCreateShader( "clientshader.fx" )
@@ -147,6 +154,8 @@ function addSticker(player, x, y, scaleX, scaleY, model, rotation, r, g, b)
 			local target = dxCreateRenderTarget( 1280, 1280, true ) -- true for transparency
 			if not target then
 				outputChatBox("Problem - failed to draw sticker - use: debugscript 3")
+				destroyElement(shaders[vehicle])
+				shaders[vehicle] = nil
 				return
 			end
 
@@ -192,12 +201,17 @@ function addSticker_onLogin( player, x, y, scaleX, scaleY, model, rotation, r, g
     	['scaleX'] = tonumber(scaleX) or 1,
     	['scaleY'] = tonumber(scaleY) or 1,
     	['model'] = model or "stickers/15.png",
+    	['texture'] = nil,
     	['rotation'] = tonumber(rotation) or 0,
     	['r'] = tonumber(r) or 255,
     	['g'] = tonumber(g) or 255,
     	['b'] = tonumber(b) or 255
 		}
 
+		if not textures[model] then
+			textures[model] = dxCreateTexture(model)
+		end
+		sticker.texture = textures[model]
 
         if not createdStickers[vehicle] then
         	local myShader,tecName = dxCreateShader( "clientshader.fx" )
@@ -253,6 +267,8 @@ addEventHandler("onPlayerLogin_stickerSynchro", localPlayer, addSticker_onLogin,
 -- )
 addEventHandler("onClientResourceStop", resourceRoot,
 function()
+	toggleAllControls(true)
+    showCursor(false)
 	for vehicle, target in pairs(createdStickers) do
 		-- outputChatBox(tostring(getElementModel(vehicle)).." "..tostring(target))
 		destroyElement(target)
@@ -265,12 +281,13 @@ function destroyRenderTarget()
 		if createdStickers[source] then
 			-- outputChatBox("destroy stuff")
 			targets[createdStickers[source]] = nil
-			renderStickers()
 			destroyElement(createdStickers[source])
 			createdStickers[source] = nil
+			renderStickers()
 			engineRemoveShaderFromWorldTexture(shaders[source], "bodymap", source)
 			destroyElement(shaders[source])
 			shaders[source] = nil
+			collectgarbage()
 		end
 	end
 end
@@ -340,11 +357,16 @@ function insertSticker(player, id, mode)
     	['scaleX'] = tonumber(sticker.scaleX) or 1,
     	['scaleY'] = tonumber(sticker.scaleY) or 1,
     	['model'] = sticker.model or "stickers/15.png",
+    	['texture'] = nil,
     	['rotation'] = tonumber(sticker.rotation) or 0,
     	['r'] = tonumber(sticker.r) or 255,
     	['g'] = tonumber(sticker.g) or 255,
     	['b'] = tonumber(sticker.b) or 255
 		}
+		if not textures[sticker.model] then
+			textures[sticker.model] = dxCreateTexture(sticker.model)
+		end
+		sticker_new.texture = textures[sticker.model]
 		sticker_new.y = 767-sticker_new.y
 		if mode == "Text" then
 			sticker_new.scaleX = -sticker_new.scaleX

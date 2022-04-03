@@ -80,6 +80,7 @@ end
 
 local isGUIReadyToOpen = false
 local sticker_count = 0
+local page_nr = 1
 local sw, sh = guiGetScreenSize ( )
 function stickerLoadingProgress()
 	-- dxDrawLine( sw/1.3, sh/1.3+0.02777*sh, sw/1.3+(0.101*sw*(sticker_count/#stickers_imgs)), sh/1.3+0.02777*sh, tocolor(200, 200, 200), 10 )
@@ -100,25 +101,86 @@ function loadStickerList()
 	stickers_select_img = {}
     stickers_select_btn = {}
     local row = 0
-    for i=1, no_stickers do
+    finishedloadinglist = false
+    for i=1, 9 do
+    	if sticker_count > no_stickers then
+    		sticker_count = no_stickers
+    		break
+    	end
     	if not main_windows then
     		removeEventHandler("onClientRender", root, stickerLoadingProgress)
     		break
     	end
-    	sticker_count = i
+    	sticker_count = sticker_count + 1
         -- local new_row = 0
         if (i-1) % 3 == 0 then
             row = row +1
             -- new_row = 1
         end
-        stickers_select_btn[i] = guiCreateButton( ( 0.05+( 0.3*( (i-1)%3 ) ) ), 0.02+(0.3*row), 0.27, 0.27, "", true, stickers_select_scroll )
-        stickers_select_img[i] = guiCreateStaticImage(( 0.05+( 0.3*( (i-1)%3 ) ) ), 0.02+(0.3*row), 0.27, 0.27, "stickers/"..tostring(i)..".png", true, stickers_select_scroll)
-        guiSetProperty( stickers_select_img[i], "Disabled", "True" )
-        guiSetProperty( stickers_select_img[i], "AlwaysOnTop", "True" )
-        addEventHandler("onClientGUIClick", stickers_select_btn[i], gui_SelectSticker, false)
+        -- outputChatBox(sticker_count)
+        stickers_select_btn[sticker_count] = guiCreateButton( ( 0.05+( 0.3*( (i-1)%3 ) ) ), 0.05+(0.27*(row-1)), 0.27, 0.25, "", true, stickers_select_window )
+        stickers_select_img[sticker_count] = guiCreateStaticImage(( 0.05+( 0.3*( (i-1)%3 ) ) ), 0.05+(0.27*(row-1)), 0.27, 0.25, "stickers/"..tostring(sticker_count)..".png", true, stickers_select_window)
+        guiSetProperty( stickers_select_img[sticker_count], "Disabled", "True" )
+        guiSetProperty( stickers_select_img[sticker_count], "AlwaysOnTop", "True" )
+        addEventHandler("onClientGUIClick", stickers_select_btn[sticker_count], gui_SelectSticker, false)
         sleep(110)
     end
     finishedloadinglist = true
+end
+
+function deleteRemainingPage()
+	if type(stickers_select_btn) ~= "table" then
+		return
+	end
+	for i, _ in pairs(stickers_select_btn) do
+		if isElement(stickers_select_btn[i]) then
+			destroyElement(stickers_select_btn[i])
+			stickers_select_btn[i] = nil
+		end
+		if isElement(stickers_select_img[i]) then
+			destroyElement(stickers_select_img[i])
+			stickers_select_img[i] = nil
+		end
+	end
+end
+
+function gui_ScrollPage()
+	if not finishedloadinglist then
+		return
+	end
+	finishedloadinglist = false
+	if source == stickers_select_down_btn then
+		if page_nr <= 1 then
+			page_nr = 1
+			finishedloadinglist = true
+			return
+		end
+		deleteRemainingPage()
+		page_nr = page_nr - 1
+		sticker_count = sticker_count - 18
+		callFunctionWithSleeps(loadStickerList)
+	end
+	if source == stickers_select_up_btn then
+		if page_nr >= math.ceil(no_stickers/9) then
+			finishedloadinglist = true
+			return
+		end
+		deleteRemainingPage()
+		page_nr = page_nr + 1
+		callFunctionWithSleeps(loadStickerList)
+	end
+end
+
+function gui_ExitSelectWindow()
+	if not finishedloadinglist then
+		return
+	end
+	-- deleteRemainingPage()
+	-- deleteStickerList()
+	guiSetVisible( stickers_select_window, false )
+    guiSetEnabled( stickers_settings_window, true )
+    guiSetEnabled( stickers_display_window, true )
+    guiSetEnabled( stickers_save_info_window, true )
 end
 
 function postDownloadGUI ()
@@ -128,7 +190,14 @@ function postDownloadGUI ()
         guiWindowSetSizable(stickers_select_window, false)
         guiSetVisible(stickers_select_window, false)
 
-        stickers_select_scroll = guiCreateScrollPane(0.01, 0.02, 0.98, 0.96, true, stickers_select_window)
+        stickers_select_up_btn = guiCreateButton(0.6, 0.87, 0.1, 0.1, ">", true, stickers_select_window)
+        stickers_select_down_btn = guiCreateButton(0.3, 0.87, 0.1, 0.1, "<", true, stickers_select_window)
+        stickers_select_exit_btn = guiCreateButton(0.45, 0.87, 0.1, 0.1, "X", true, stickers_select_window)
+        addEventHandler("onClientGUIClick", stickers_select_up_btn, gui_ScrollPage, false)
+        addEventHandler("onClientGUIClick", stickers_select_down_btn, gui_ScrollPage, false)
+        addEventHandler("onClientGUIClick", stickers_select_exit_btn, gui_ExitSelectWindow, false)
+
+        -- stickers_select_scroll = guiCreateScrollPane(0.01, 0.02, 0.98, 0.96, true, stickers_select_window)
 
         -- stickers_select_img = {}
         -- stickers_select_btn = {}
@@ -553,10 +622,13 @@ function gui_loadStickers_exitVehicle()
     -- end
     temporary_gui_stickers = {}
     temporary_gui_stickers_btn = {}
+    collectgarbage()
     -- temporary_gui_sticker_ids = {}
 end
 
 function toggle_main_windows( enable )
+	deleteRemainingPage()
+	page_nr = 1
     if enable == true then
         guiSetVisible(stickers_settings_window, true)
         guiSetVisible(stickers_display_window, true)
@@ -577,10 +649,11 @@ function toggle_main_windows( enable )
         removeEventHandler( "onClientRender", root, check_cursor )
         main_windows = false
     end
+    collectgarbage()
 end
 
-function check_bind( )
-    if getKeyState("lctrl") then
+function check_bind( cName )
+    if cName == "stickers" or getKeyState("lctrl") then
     	if not isGUIReadyToOpen then outputChatBox("Sticker panel is loading, please wait") return end
         if guiGetVisible(stickers_settings_window) then return end
         local vehicle = getPedOccupiedVehicle(localPlayer)
@@ -595,6 +668,7 @@ function check_bind( )
     end
 end
 bindKey( "e", "down", check_bind )
+addCommandHandler("stickers", check_bind)
 
 function check_cursor( )
     if getKeyState("mouse2") then
@@ -651,8 +725,10 @@ function gui_addSticker( )
     guiSetEnabled( stickers_display_window, false )
     guiSetEnabled( stickers_save_info_window, false )
     if not loadedStickers then
+    	deleteRemainingPage()
+    	page_nr = 1
     	callFunctionWithSleeps(loadStickerList)
-    	addEventHandler("onClientRender", root, stickerLoadingProgress)
+    	-- addEventHandler("onClientRender", root, stickerLoadingProgress)
     	loadedStickers = true
     end
 end
@@ -813,15 +889,13 @@ function gui_removeSticker( )
 end
 
 function deleteStickerList()
-	if stickers_select_img then
-		if #stickers_select_img > 0 then
-			for i=1, #stickers_select_img do
-				destroyElement(stickers_select_btn[i])
-				destroyElement(stickers_select_img[i])
-				-- sleep(10)
-				stickers_select_btn[i] = nil
-				stickers_select_img[i] = nil
-			end
+	if type(stickers_select_img) == "table" then
+		for i, _ in pairs(stickers_select_btn) do
+			destroyElement(stickers_select_btn[i])
+			destroyElement(stickers_select_img[i])
+			-- sleep(10)
+			stickers_select_btn[i] = nil
+			stickers_select_img[i] = nil
 		end
 	end
 	-- outputChatBox("DELETED")
@@ -853,7 +927,7 @@ end
 
 function gui_SelectSticker( )
     local index = {}
-    for k,v in ipairs(stickers_select_btn) do
+    for k,v in pairs(stickers_select_btn) do
         index[v] = k
     end
     -- outputChatBox(tostring(index[source]))
@@ -887,3 +961,10 @@ function gui_select_created_sticker( )
     -- outputChatBox("Selected: "..tostring(index[source]))
     current_selected_sticker = index[source]
 end
+
+addEventHandler("onClientVehicleExit", root, function()
+    gui_exitWindows()
+end)
+addEventHandler("onClientVehicleEnter", root, function()
+    gui_exitWindows()
+end)
