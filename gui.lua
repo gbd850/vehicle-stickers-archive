@@ -520,7 +520,7 @@ function presets_LoadPreset( )
 		local preset_name_from_table = xmlNodeGetAttribute(node, "name")
 		if preset_name_from_table == preset_name then
 			local vehicle = getPedOccupiedVehicle(localPlayer)
-			if not vehicle then outputChatBox("Not in vehicle") return end
+			if not vehicle then outputChatBox("Not in vehicle") break end
 			--Removing stickers from display
 			for i=1, #temporary_gui_stickers_btn do
         		removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
@@ -558,6 +558,7 @@ function presets_LoadPreset( )
     		end
     	end
     end
+    xmlUnloadFile(preset_file)
     emergency_preset_window_exit( "true" )
 end
 
@@ -962,9 +963,13 @@ function gui_select_created_sticker( )
     current_selected_sticker = index[source]
 end
 
-addEventHandler("onClientVehicleExit", root, function()
-    gui_exitWindows()
+addEventHandler("onClientVehicleExit", root, function(player)
+	if player == localPlayer then
+    	gui_exitWindows()
+    end
 end)
-addEventHandler("onClientVehicleEnter", root, function()
-    gui_exitWindows()
+addEventHandler("onClientVehicleEnter", root, function(player)
+	if player == localPlayer then
+    	gui_exitWindows()
+    end
 end)
