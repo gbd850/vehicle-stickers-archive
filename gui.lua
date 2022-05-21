@@ -181,6 +181,11 @@ function gui_ExitSelectWindow()
     guiSetEnabled( stickers_settings_window, true )
     guiSetEnabled( stickers_display_window, true )
     guiSetEnabled( stickers_save_info_window, true )
+
+    guiSetVisible(sticker_move_up_btn, false)
+  	guiSetVisible(sticker_move_down_btn, false)
+  	guiSetEnabled(sticker_move_up_btn, false)
+  	guiSetEnabled(sticker_move_down_btn, false)
 end
 
 function postDownloadGUI ()
@@ -234,6 +239,9 @@ function postDownloadGUI ()
         guiWindowSetSizable(stickers_display_window, false)
 
         stickers_display_scroll = guiCreateScrollPane(0.05, 0.05, 0.89, 0.93, true, stickers_display_window)
+
+        sticker_move_up_btn = guiCreateButton(0.85, 0.45, 0.02, 0.05, "/\\", true)
+        sticker_move_down_btn = guiCreateButton(0.85, 0.55, 0.02, 0.05, "\\/", true)
 
         stickers_mirror_window = guiCreateWindow(0.41, 0.22, 0.19, 0.10, "Mirroring Settings", true)
         guiWindowSetSizable(stickers_mirror_window, false)
@@ -338,16 +346,25 @@ function postDownloadGUI ()
         guiSetVisible(stickers_save_load_window, false)
         guiSetVisible(stickers_info_window, false)
 
+        guiSetVisible(sticker_move_up_btn, false)
+        guiSetVisible(sticker_move_down_btn, false)
+
         guiSetVisible(stickers_mirror_window, false)
 
         guiSetEnabled(stickers_edit_btn, false)
         guiSetEnabled(stickers_remove_btn, false)
+
+        guiSetEnabled(sticker_move_up_btn, false)
+        guiSetEnabled(sticker_move_down_btn, false)
 
         addEventHandler ( "onClientGUIClick", stickers_add_btn, gui_addSticker, false )
         addEventHandler ( "onClientGUIClick", stickers_edit_btn, gui_editSticker, false )
         addEventHandler ( "onClientGUIClick", stickers_edit_btn, editing_button_toggle, false )
         addEventHandler ( "onClientGUIClick", stickers_remove_btn, gui_removeSticker, false )
         addEventHandler ( "onClientGUIClick", stickers_exit_btn, gui_exitWindows, false )
+
+        addEventHandler ( "onClientGUIClick", sticker_move_up_btn, gui_MoveStickerLayer, false )
+        addEventHandler ( "onClientGUIClick", sticker_move_down_btn, gui_MoveStickerLayer, false )
 
         addEventHandler ( "onClientGUIClick", stickers_edit_pos_btn, gui_editMode, false )
         addEventHandler ( "onClientGUIClick", stickers_edit_scale_btn, gui_editMode, false )
@@ -394,6 +411,11 @@ function gui_PresetsWindow( )
 		guiSetEnabled(stickers_save_info_window, false)
 		guiSetEnabled(stickers_settings_window, false)
 		guiSetEnabled(stickers_display_window, false)
+
+		guiSetVisible(sticker_move_up_btn, false)
+	  	guiSetVisible(sticker_move_down_btn, false)
+	  	guiSetEnabled(sticker_move_up_btn, false)
+	  	guiSetEnabled(sticker_move_down_btn, false)
 		refresh_saved_presets("true")
 		return
 	end
@@ -403,6 +425,11 @@ function gui_PresetsWindow( )
 		guiSetEnabled(stickers_save_info_window, true)
 		guiSetEnabled(stickers_settings_window, true)
 		guiSetEnabled(stickers_display_window, true)
+
+		guiSetVisible(sticker_move_up_btn, false)
+	  	guiSetVisible(sticker_move_down_btn, false)
+	  	guiSetEnabled(sticker_move_up_btn, false)
+	  	guiSetEnabled(sticker_move_down_btn, false)
 		refresh_saved_presets("false")
 		return
 	end
@@ -585,6 +612,11 @@ function editing_button_toggle( apply )
 
         guiSetEnabled(stickers_save_info_window, true)
 
+        guiSetVisible(sticker_move_up_btn, false)
+	  	guiSetVisible(sticker_move_down_btn, false)
+	  	guiSetEnabled(sticker_move_up_btn, false)
+	  	guiSetEnabled(sticker_move_down_btn, false)
+
         current_edit_mode = nil
         current_selected_sticker = nil
     end
@@ -592,6 +624,8 @@ function editing_button_toggle( apply )
         change_editing( "edit", current_selected_sticker, "pos" )
         guiSetEnabled( stickers_settings_window, false )
         guiSetEnabled( stickers_save_info_window, false )
+        guiSetEnabled(sticker_move_up_btn, false)
+	  	guiSetEnabled(sticker_move_down_btn, false)
     end
 end
 
@@ -720,6 +754,40 @@ end
 -- end
 -- addEventHandler( "onClientVehicleExit", root, gui_loadStickers_exitVehicle )
 
+function redrawStickersTempGui()
+	local vehicle = getPedOccupiedVehicle( localPlayer )
+	if not vehicle then
+		return false
+	end
+	local stickers = targets[ createdStickers[vehicle] ]
+	if not stickers then outputChatBox("Something went wrong while redrawing sticker images, please try again later", 255, 25, 25) return false end
+
+	for i=1, #temporary_gui_stickers_btn do
+        removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
+        destroyElement(temporary_gui_stickers_btn[i])
+        destroyElement(temporary_gui_stickers[i])
+    end
+
+    temporary_gui_stickers = {}
+    temporary_gui_stickers_btn = {}
+
+    setTimer( function()
+        for i=1, #stickers do
+            local sticker = stickers[i]
+            temporary_gui_stickers[i] = guiCreateStaticImage(0, 0.02+(0.27*(i-1)), 0.8, 0.265, sticker['model'], true, stickers_display_scroll)
+            temporary_gui_stickers_btn[i] = guiCreateButton( 0, 0.02+(0.27*(i-1)), 0.8, 0.265, "", true, stickers_display_scroll )
+            guiSetProperty( temporary_gui_stickers[i], "Disabled", "True" )
+            guiSetProperty( temporary_gui_stickers[i], "AlwaysOnTop", "True" )
+            addEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker, false )
+        end
+    end, 150, 1 )
+
+    collectgarbage()
+    collectgarbage()
+    return true
+
+end
+
 function gui_addSticker( )
     guiSetVisible( stickers_select_window, true )
     guiSetEnabled( stickers_settings_window, false )
@@ -753,28 +821,29 @@ function gui_MirrorSticker()
 
         editing_button_toggle("apply")
 
-        for i=1, #temporary_gui_stickers_btn do
-            removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
-            destroyElement(temporary_gui_stickers_btn[i])
-            destroyElement(temporary_gui_stickers[i])
-        end
+        redrawStickersTempGui()
+        -- for i=1, #temporary_gui_stickers_btn do
+        --     removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
+        --     destroyElement(temporary_gui_stickers_btn[i])
+        --     destroyElement(temporary_gui_stickers[i])
+        -- end
 
-        temporary_gui_stickers = {}
-        temporary_gui_stickers_btn = {}
+        -- temporary_gui_stickers = {}
+        -- temporary_gui_stickers_btn = {}
 
-        local stickers = targets[ createdStickers[vehicle] ]
-        if not stickers then return end
-        setTimer( function()
-            for i=1, #stickers do
-                local sticker = stickers[i]
-                temporary_gui_stickers[i] = guiCreateStaticImage(0, 0.02+(0.27*(i-1)), 0.8, 0.265, sticker['model'], true, stickers_display_scroll)
-                temporary_gui_stickers_btn[i] = guiCreateButton( 0, 0.02+(0.27*(i-1)), 0.8, 0.265, "", true, stickers_display_scroll )
-                guiSetProperty( temporary_gui_stickers[i], "Disabled", "True" )
-                guiSetProperty( temporary_gui_stickers[i], "AlwaysOnTop", "True" )
-                addEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker, false )
-                -- outputChatBox(tostring(sticker))
-            end
-        end, 100, 1 )
+        -- local stickers = targets[ createdStickers[vehicle] ]
+        -- if not stickers then return end
+        -- setTimer( function()
+        --     for i=1, #stickers do
+        --         local sticker = stickers[i]
+        --         temporary_gui_stickers[i] = guiCreateStaticImage(0, 0.02+(0.27*(i-1)), 0.8, 0.265, sticker['model'], true, stickers_display_scroll)
+        --         temporary_gui_stickers_btn[i] = guiCreateButton( 0, 0.02+(0.27*(i-1)), 0.8, 0.265, "", true, stickers_display_scroll )
+        --         guiSetProperty( temporary_gui_stickers[i], "Disabled", "True" )
+        --         guiSetProperty( temporary_gui_stickers[i], "AlwaysOnTop", "True" )
+        --         addEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker, false )
+        --         -- outputChatBox(tostring(sticker))
+        --     end
+        -- end, 100, 1 )
     end
 end
 
@@ -796,6 +865,8 @@ function gui_editMode( )
         change_editing( "edit", current_selected_sticker, "color" )
         guiSetEnabled(stickers_edit_window, false)
         guiSetEnabled(stickers_mirror_window, false)
+	  	guiSetEnabled(sticker_move_up_btn, false)
+	  	guiSetEnabled(sticker_move_down_btn, false)
     end
 end
 
@@ -805,6 +876,46 @@ function gui_AcceptColor( )
     guiSetEnabled(stickers_mirror_window, true)
 end
 addEventHandler("onColorPickerOK_btn", root, gui_AcceptColor)
+
+
+function gui_MoveStickerLayer()
+	local id = tonumber(current_selected_sticker)
+	local dir
+	if source == sticker_move_up_btn then
+		if id <= 1 then return end
+		dir = "up"
+	end
+	if source == sticker_move_down_btn then
+		if id >= #temporary_gui_stickers_btn then return end
+		dir = "down"
+	end
+	if type(dir) ~= "string" then
+		outputChatBox("Something went wrong while layering sticker", 255, 25, 25)
+		return
+	end
+
+	guiSetEnabled( stickers_settings_window, true )
+
+    guiSetEnabled(stickers_edit_btn, false)
+    guiSetEnabled(stickers_remove_btn, false)
+    guiSetEnabled(stickers_add_btn, true)
+    guiSetEnabled(stickers_exit_btn, true)
+
+    guiSetEnabled( stickers_display_window, true )
+    guiSetVisible( stickers_edit_window, false )
+
+    guiSetVisible(stickers_mirror_window, false)
+
+    guiSetVisible(sticker_move_up_btn, false)
+  	guiSetVisible(sticker_move_down_btn, false)
+  	guiSetEnabled(sticker_move_up_btn, false)
+  	guiSetEnabled(sticker_move_down_btn, false)
+
+	triggerServerEvent("gui_onMoveStickerLayer", root, localPlayer, id, dir)
+	redrawStickersTempGui()
+	current_selected_sticker = nil
+
+end
 
 function gui_removeSticker( )
     local player = localPlayer
@@ -821,6 +932,11 @@ function gui_removeSticker( )
 
     guiSetVisible(stickers_mirror_window, false)
 
+    guiSetVisible(sticker_move_up_btn, false)
+  	guiSetVisible(sticker_move_down_btn, false)
+  	guiSetEnabled(sticker_move_up_btn, false)
+  	guiSetEnabled(sticker_move_down_btn, false)
+
     local vehicle = getPedOccupiedVehicle( player )
     if vehicle then
 
@@ -833,26 +949,29 @@ function gui_removeSticker( )
             return
         end
         if ( tonumber(id) ~= #stickers ) then
-            for i=1, #temporary_gui_stickers_btn do
-                removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
-                destroyElement(temporary_gui_stickers_btn[i])
-                destroyElement(temporary_gui_stickers[i])
-            end
+        	if not redrawStickersTempGui() then
+        		return
+        	end
+            -- for i=1, #temporary_gui_stickers_btn do
+            --     removeEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker )
+            --     destroyElement(temporary_gui_stickers_btn[i])
+            --     destroyElement(temporary_gui_stickers[i])
+            -- end
 
-            temporary_gui_stickers = {}
-            temporary_gui_stickers_btn = {}
+            -- temporary_gui_stickers = {}
+            -- temporary_gui_stickers_btn = {}
 
-            if not stickers then return end
-            setTimer( function()
-                for i=1, #stickers do
-                    local sticker = stickers[i]
-                    temporary_gui_stickers[i] = guiCreateStaticImage(0, 0.02+(0.27*(i-1)), 0.8, 0.265, sticker['model'], true, stickers_display_scroll)
-                    temporary_gui_stickers_btn[i] = guiCreateButton( 0, 0.02+(0.27*(i-1)), 0.8, 0.265, "", true, stickers_display_scroll )
-                    guiSetProperty( temporary_gui_stickers[i], "Disabled", "True" )
-                    guiSetProperty( temporary_gui_stickers[i], "AlwaysOnTop", "True" )
-                    addEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker, false )
-                end
-            end, 100, 1 )
+            -- if not stickers then return end
+            -- setTimer( function()
+            --     for i=1, #stickers do
+            --         local sticker = stickers[i]
+            --         temporary_gui_stickers[i] = guiCreateStaticImage(0, 0.02+(0.27*(i-1)), 0.8, 0.265, sticker['model'], true, stickers_display_scroll)
+            --         temporary_gui_stickers_btn[i] = guiCreateButton( 0, 0.02+(0.27*(i-1)), 0.8, 0.265, "", true, stickers_display_scroll )
+            --         guiSetProperty( temporary_gui_stickers[i], "Disabled", "True" )
+            --         guiSetProperty( temporary_gui_stickers[i], "AlwaysOnTop", "True" )
+            --         addEventHandler( "onClientGUIClick", temporary_gui_stickers_btn[i], gui_select_created_sticker, false )
+            --     end
+            -- end, 100, 1 )
         --     for i = id, #temporary_gui_stickers do
         --         outputChatBox(i)
         --         if not temporary_gui_stickers[i+1] then outputChatBox("break") break end
@@ -927,14 +1046,20 @@ function gui_exitWindows( )
 end
 
 function gui_SelectSticker( )
-    local index = {}
+	local s = source
+	local id
+    -- local index = {}
     for k,v in pairs(stickers_select_btn) do
-        index[v] = k
+        -- index[v] = k
+        if v == s then
+        	id = k
+        	break
+        end
     end
     -- outputChatBox(tostring(index[source]))
-    triggerServerEvent( "gui_addSticker_toServer", localPlayer, localPlayer, 400, 400, 1, 1, "stickers/"..tostring(index[source])..".png", 0, 255, 255, 255 )
+    triggerServerEvent( "gui_addSticker_toServer", localPlayer, localPlayer, 400, 400, 1, 1, "stickers/"..tostring(id)..".png", 0, 255, 255, 255 )
     local vehicle = getPedOccupiedVehicle( localPlayer )
-    triggerServerEvent( "onSynchroStickers", localPlayer, vehicle, 400, 400, 1, 1, "stickers/"..tostring(index[source])..".png", 0, 255, 255, 255 )
+    triggerServerEvent( "onSynchroStickers", localPlayer, vehicle, 400, 400, 1, 1, "stickers/"..tostring(id)..".png", 0, 255, 255, 255 )
     guiSetVisible( stickers_select_window, false )
     guiSetEnabled( stickers_settings_window, true )
     guiSetEnabled( stickers_display_window, true )
@@ -942,7 +1067,7 @@ function gui_SelectSticker( )
     local i = #temporary_gui_stickers_btn
     outputChatBox("Sticker id "..tostring(i+1).." has been created", 25, 255, 25)
     temporary_gui_stickers_btn[i+1] = guiCreateButton(0, 0.02+(0.27*(i)), 0.8, 0.265, "", true, stickers_display_scroll)
-    temporary_gui_stickers[i+1] = guiCreateStaticImage(0, 0.02+(0.27*(i)), 0.8, 0.265, "stickers/"..tostring(index[source])..".png", true, stickers_display_scroll)
+    temporary_gui_stickers[i+1] = guiCreateStaticImage(0, 0.02+(0.27*(i)), 0.8, 0.265, "stickers/"..tostring(id)..".png", true, stickers_display_scroll)
     guiSetProperty( temporary_gui_stickers[i+1], "Disabled", "True" )
     guiSetProperty( temporary_gui_stickers[i+1], "AlwaysOnTop", "True" )
     -- temporary_gui_sticker_ids[i+1] = guiCreateCheckBox(0.05, 0.03+(0.27*(i)), 0.3, 0.1, "", false, true, stickers_display_scroll)
@@ -955,12 +1080,23 @@ function gui_select_created_sticker( )
     guiSetEnabled(stickers_exit_btn, false)
     guiSetEnabled(stickers_edit_btn, true)
     guiSetEnabled(stickers_remove_btn, true)
-    local index = {}
+
+	guiSetVisible(sticker_move_up_btn, true)
+  	guiSetVisible(sticker_move_down_btn, true)
+  	guiSetEnabled(sticker_move_up_btn, true)
+  	guiSetEnabled(sticker_move_down_btn, true)
+  	local s = source  
+    -- local index = {}
     for k,v in ipairs(temporary_gui_stickers_btn) do
-        index[v] = k
+        -- index[v] = k
+        if v == s then
+        	current_selected_sticker = k
+        	break
+        end
     end
     -- outputChatBox("Selected: "..tostring(index[source]))
-    current_selected_sticker = index[source]
+    -- current_selected_sticker = index[s]
+
 end
 
 addEventHandler("onClientVehicleExit", root, function(player)

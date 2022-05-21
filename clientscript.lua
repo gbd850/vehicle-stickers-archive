@@ -380,6 +380,32 @@ end
 addEvent("onInsertSticker", true)
 addEventHandler("onInsertSticker", root, insertSticker)
 
+function moveStickerLayer(player, id, dir)
+	if not id then return end
+	local vehicle = getPedOccupiedVehicle( player )
+	if not vehicle then return end
+	local stickers = targets[ createdStickers[vehicle] ]
+	if not stickers then return end
+	if dir == "up" then
+		if id == 1 then return end
+		local tmp = stickers[id-1]
+		stickers[id-1] = stickers[id]
+		stickers[id] = tmp
+		renderStickers()
+		return
+	end
+	if dir == "down" then
+		if id == #stickers then return end
+		local tmp = stickers[id+1]
+		stickers[id+1] = stickers[id]
+		stickers[id] = tmp
+		renderStickers()
+		return
+	end
+end
+addEvent("onMoveStickerLayer", true)
+addEventHandler("onMoveStickerLayer", root, moveStickerLayer)
+
 function editSticker( player, id, x, y, scaleX, scaleY, model, rotation, r, g, b )
 	if not id then
 		-- outputChatBox("Sticker ID not specified")

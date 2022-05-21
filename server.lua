@@ -96,6 +96,31 @@ end
 addEvent("gui_onInsertSticker", true)
 addEventHandler("gui_onInsertSticker", root, insertSticker_s)
 
+function moveStickerLayer_s(player, id, dir)
+	if not id then return end
+	local vehicle = getPedOccupiedVehicle( player )
+	if not vehicle then return end
+	triggerClientEvent("onMoveStickerLayer", player, player, id, dir)
+	local stickers = createdStickers_s[vehicle]
+	if not stickers then return end
+	if dir == "up" then
+		if id == 1 then return end
+		local tmp = stickers[id-1]
+		stickers[id-1] = stickers[id]
+		stickers[id] = tmp
+		return
+	end
+	if dir == "down" then
+		if id == #stickers then return end
+		local tmp = stickers[id+1]
+		stickers[id+1] = stickers[id]
+		stickers[id] = tmp
+		return
+	end
+end
+addEvent("gui_onMoveStickerLayer", true)
+addEventHandler("gui_onMoveStickerLayer", root, moveStickerLayer_s)
+
 function editSticker_s( player, cName, id, x, y, scaleX, scaleY, model, rotation, r, g, b )
 	triggerClientEvent("onEditSticker", player, player, id, x, y, scaleX, scaleY, model, rotation, r, g, b)
 	if not id then
