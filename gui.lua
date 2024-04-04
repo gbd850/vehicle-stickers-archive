@@ -12,20 +12,20 @@
 
 local no_stickers = 389
 
-local availableVehicles = {
-	[402] = true,
-	[527] = true,
-	[466] = true,
-	[550] = true,
-	[560] = true,
-	[439] = true,
-	[415] = true,
-	[474] = true,
-	[491] = true,
-	[555] = true,
-	[558] = true,
-	[542] = true
-}
+-- local availableVehicles = {
+-- 	[402] = true,
+-- 	[527] = true,
+-- 	[466] = true,
+-- 	[550] = true,
+-- 	[560] = true,
+-- 	[439] = true,
+-- 	[415] = true,
+-- 	[474] = true,
+-- 	[491] = true,
+-- 	[555] = true,
+-- 	[558] = true,
+-- 	[542] = true
+-- }
 
 
 local temporary_gui_stickers = {}

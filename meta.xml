@@ -3,6 +3,7 @@
 	<include resource="cpicker" />
     <script src="clientscript.lua" type="client" cache="false" />
     <script src="gui.lua" type="client" cache="false" />
+    <script src="vehicles.lua" type="client" cache="false" />
     <script src="server.lua" type="server" />
     <file src="clientshader.fx" type="client" cache="false" />
     <file src="mta-helper.fx" type="client" cache="false" />
